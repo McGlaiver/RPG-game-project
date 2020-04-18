@@ -28,12 +28,54 @@ namespace Gamekit2D
         public int characterLevel;
         public int levelUpAmount = 40;
         public int talentPointsSpent = 0;
+        public int stamina = 100;
+        public int mana = 100;
+        public int meeleAttackStamina = 20;
+        public int rangedAttackMana = 50;
         public GameObject ExperienceBar;
         public GameObject ExperienceBarSlider;
         public GameObject XpBarFill;
+        public GameObject staminaBarFill;
+        public GameObject staminaBarSlider;
+        public GameObject manaBarFill;
+        public GameObject manaBarSlider;
         
         
+        public void UpdateStamina(int change){
+            if ((stamina + change) <= 100){
+                stamina = stamina + change;
+                staminaBarFill.GetComponent<Text>().text = stamina + " / 100";
+                staminaBarSlider.GetComponent<Slider>().value = stamina;
+            }
+        }
 
+        public void UpdateMana(int change){
+            if ((mana + change) <= 100){
+                mana = mana + change;
+                manaBarFill.GetComponent<Text>().text = mana + " / 100";
+                manaBarSlider.GetComponent<Slider>().value = mana;
+            }
+        }
+
+        public void RegenerationTick(){
+            UpdateMana(5);           
+            UpdateStamina(10);
+        }
+
+        public void LevelUp(){
+            characterLevel = totalExperience / levelUpAmount + 1;
+            currentExperience = totalExperience - levelUpAmount;
+            levelUpAmount = levelUpAmount * characterLevel;
+            ExperienceBarSlider.GetComponent<Slider>().maxValue = levelUpAmount;
+            damageable.SetHealth(damageable.startingHealth);
+            HealthUI.ChangeHitPointUI(damageable);
+            manaBarFill.GetComponent<Text>().text = "100 / 100";
+            manaBarSlider.GetComponent<Slider>().value = 100;
+            mana = 100;
+            staminaBarFill.GetComponent<Text>().text = "100 / 100";
+            staminaBarSlider.GetComponent<Slider>().value = 100;
+            stamina = 100;
+        }
                 
         public void AddExperience(int XPGain)
         {
@@ -42,14 +84,9 @@ namespace Gamekit2D
             
             if ((totalExperience / levelUpAmount) >= characterLevel)
             {
-                characterLevel = totalExperience / levelUpAmount + 1;
-                currentExperience = totalExperience - levelUpAmount;
-                levelUpAmount = levelUpAmount * characterLevel;
-                ExperienceBarSlider.GetComponent<Slider>().maxValue = levelUpAmount;
-                damageable.SetHealth(damageable.startingHealth);
-                HealthUI.ChangeHitPointUI(damageable);
+                LevelUp();
             }
-            ExperienceBar.GetComponent<Text>().text = "Exp: " + currentExperience + "\nLevel: " + characterLevel;
+            ExperienceBar.GetComponent<Text>().text = ""+ characterLevel;
             ExperienceBarSlider.GetComponent<Slider>().value = currentExperience;
             XpBarFill.GetComponent<Text>().text = currentExperience + " / " + levelUpAmount;
 
@@ -182,11 +219,21 @@ namespace Gamekit2D
             ExperienceBar = GameObject.Find("ExperienceBar");
             ExperienceBarSlider = GameObject.Find("ExperienceBarSlider");
             XpBarFill = GameObject.Find("XpBarFill");
+            staminaBarFill = GameObject.Find("staminaBarFill");
+            staminaBarSlider = GameObject.Find("staminaBarSlider");
+            manaBarFill = GameObject.Find("manaBarFill");
+            manaBarSlider = GameObject.Find("manaBarSlider");
+
             HealthUI.ChangeHitPointUI(damageable);
+
             totalExperience = 0;
             characterLevel = 1;
-            ExperienceBar.GetComponent<Text>().text = "Exp: " + totalExperience + "\nLevel: " + characterLevel;
+            ExperienceBar.GetComponent<Text>().text = "" + characterLevel;
             XpBarFill.GetComponent<Text>().text = totalExperience + " / " + levelUpAmount;
+            staminaBarFill.GetComponent<Text>().text = stamina + " / 100";
+            manaBarFill.GetComponent<Text>().text = mana + " / 100";
+            
+            InvokeRepeating("RegenerationTick",0.0f,1.0f);
             //EndOf Ada Script
 
 
@@ -352,18 +399,24 @@ namespace Gamekit2D
             spriteRenderer.enabled = true;
         }
 
+        //AdaScript
         protected IEnumerator Shoot()
         {
             while (PlayerInput.Instance.RangedAttack.Held)
             {
-                if (Time.time >= m_NextShotTime)
-                {
-                    SpawnBullet();
-                    m_NextShotTime = Time.time + m_ShotSpawnGap;
-                }
-                yield return null;
+                
+                    if (Time.time >= m_NextShotTime)
+                    {
+                        if (mana >= rangedAttackMana){
+                            SpawnBullet();
+                            m_NextShotTime = Time.time + m_ShotSpawnGap;
+                            UpdateMana(-rangedAttackMana);
+                        }
+                    }
+                    yield return null;
             }
         }
+        // EndOf AdaScript
 
         protected void SpawnBullet()
         {
@@ -796,17 +849,26 @@ namespace Gamekit2D
             return PlayerInput.Instance.MeleeAttack.Down;
         }
 
+         //Ada Script
         public void MeleeAttack()
         {
+            if  (stamina >= meeleAttackStamina){
             m_Animator.SetTrigger(m_HashMeleeAttackPara);
+            }
+            
         }
 
         public void EnableMeleeAttack()
         {
+            if  (stamina >= meeleAttackStamina){
             meleeDamager.EnableDamage();
             meleeDamager.disableDamageAfterHit = true;
             meleeAttackAudioPlayer.PlayRandomSound();
+            UpdateStamina(-meeleAttackStamina);
+            }
         }
+
+        //End of AdaScript
 
         public void DisableMeleeAttack()
         {
