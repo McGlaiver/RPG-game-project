@@ -39,6 +39,9 @@ namespace Gamekit2D
         public GameObject staminaBarSlider;
         public GameObject manaBarFill;
         public GameObject manaBarSlider;
+        public GameObject levelUpText;
+        AudioSource theSound;
+
         
         
         public void UpdateStamina(int change){
@@ -62,11 +65,16 @@ namespace Gamekit2D
             UpdateStamina(10);
         }
 
+        // Needs debug for when awarded big amount of xp, level up is based on first level up amount. Script needs to detect each lvl up and adjust lvlup amount each time level is gained.
         public void LevelUp(){
+            ShowLevelUp();
+
             characterLevel = totalExperience / levelUpAmount + 1;
             currentExperience = totalExperience - levelUpAmount;
             levelUpAmount = levelUpAmount * characterLevel;
+            
             ExperienceBarSlider.GetComponent<Slider>().maxValue = levelUpAmount;
+            
             damageable.SetHealth(damageable.startingHealth);
             HealthUI.ChangeHitPointUI(damageable);
             manaBarFill.GetComponent<Text>().text = "100 / 100";
@@ -75,14 +83,27 @@ namespace Gamekit2D
             staminaBarFill.GetComponent<Text>().text = "100 / 100";
             staminaBarSlider.GetComponent<Slider>().value = 100;
             stamina = 100;
+
+            
+            
         }
-                
+
+        public void ShowLevelUp(){
+            levelUpText.SetActive(true);
+            theSound.PlayOneShot((AudioClip)Resources.Load("SwitchShieldUpActivated"), 0.5f);
+            Invoke("HideLevelUp",3f);
+        }
+        public void HideLevelUp(){
+            levelUpText.SetActive(false);
+        }
+
+        // debug this    
         public void AddExperience(int XPGain)
         {
             totalExperience = totalExperience + XPGain;
             currentExperience = currentExperience + XPGain;
             
-            if ((totalExperience / levelUpAmount) >= characterLevel)
+            if ((currentExperience / levelUpAmount) >= characterLevel)
             {
                 LevelUp();
             }
@@ -223,6 +244,9 @@ namespace Gamekit2D
             staminaBarSlider = GameObject.Find("staminaBarSlider");
             manaBarFill = GameObject.Find("manaBarFill");
             manaBarSlider = GameObject.Find("manaBarSlider");
+            levelUpText = GameObject.Find("levelUpText");
+            levelUpText.SetActive(false);
+            theSound = gameObject.AddComponent<AudioSource>();
 
             HealthUI.ChangeHitPointUI(damageable);
 
