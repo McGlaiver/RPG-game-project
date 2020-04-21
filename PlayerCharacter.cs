@@ -23,7 +23,6 @@ namespace Gamekit2D
 
         // Ada Script
 
-        public int totalExperience;
         public int currentExperience;
         public int characterLevel;
         public int levelUpAmount = 40;
@@ -65,13 +64,15 @@ namespace Gamekit2D
             UpdateStamina(10);
         }
 
-        // Needs debug for when awarded big amount of xp, level up is based on first level up amount. Script needs to detect each lvl up and adjust lvlup amount each time level is gained.
         public void LevelUp(){
             ShowLevelUp();
-
-            characterLevel = totalExperience / levelUpAmount + 1;
-            currentExperience = totalExperience - levelUpAmount;
-            levelUpAmount = levelUpAmount * characterLevel;
+            
+            while ((currentExperience / levelUpAmount) > 0){
+                characterLevel++;
+                currentExperience = currentExperience - levelUpAmount;
+                levelUpAmount = (int)(levelUpAmount * 1.5);
+            }
+            
             
             ExperienceBarSlider.GetComponent<Slider>().maxValue = levelUpAmount;
             
@@ -97,13 +98,12 @@ namespace Gamekit2D
             levelUpText.SetActive(false);
         }
 
-        // debug this    
+           
         public void AddExperience(int XPGain)
         {
-            totalExperience = totalExperience + XPGain;
             currentExperience = currentExperience + XPGain;
             
-            if ((currentExperience / levelUpAmount) >= characterLevel)
+            if ((currentExperience / levelUpAmount) >= 1)
             {
                 LevelUp();
             }
@@ -250,10 +250,10 @@ namespace Gamekit2D
 
             HealthUI.ChangeHitPointUI(damageable);
 
-            totalExperience = 0;
+            currentExperience = 0;
             characterLevel = 1;
             ExperienceBar.GetComponent<Text>().text = "" + characterLevel;
-            XpBarFill.GetComponent<Text>().text = totalExperience + " / " + levelUpAmount;
+            XpBarFill.GetComponent<Text>().text = currentExperience + " / " + levelUpAmount;
             staminaBarFill.GetComponent<Text>().text = stamina + " / 100";
             manaBarFill.GetComponent<Text>().text = mana + " / 100";
             
